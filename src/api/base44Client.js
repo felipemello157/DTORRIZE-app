@@ -9,5 +9,5 @@ export const base44 = createClient({
   appId: import.meta.env.VITE_BASE44_APP_ID || "6916d492cc9abf019259139b",
   apiKey: import.meta.env.VITE_BASE44_API_KEY || "99de92f827954ea8b42ec87e7c406b28",
   baseUrl: import.meta.env.VITE_BASE44_APP_BASE_URL,
-  requiresAuth: true // Ativa redirect automático para login do Base44
+  requiresAuth: false // Vercel frontend + Base44 backend
 });

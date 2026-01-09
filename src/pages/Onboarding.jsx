@@ -23,9 +23,10 @@ export default function Onboarding() {
     const loadUser = async () => {
       const timeoutId = setTimeout(() => {
         if (isMounted) {
-          navigate(createPageUrl("Feed"));
+          setNeedsLogin(true);
+          setIsLoading(false);
         }
-      }, 8000);
+      }, 5000);
 
       try {
         const currentUser = await base44.auth.me();
@@ -39,32 +40,16 @@ export default function Onboarding() {
           return;
         }
 
-        // Detectar tipo de usuário (paralelo - otimizado)
-        const [professionals, owners, suppliers, hospitals] = await Promise.all([
-          base44.entities.Professional.filter({ user_id: currentUser.id }),
-          base44.entities.CompanyOwner.filter({ user_id: currentUser.id }),
-          base44.entities.Supplier.filter({ user_id: currentUser.id }),
-          base44.entities.Hospital.filter({ user_id: currentUser.id })
-        ]);
+        if (professionals.length > 0) setUserType("PROFISSIONAL");
+        else if (owners.length > 0) setUserType("CLINICA");
+        else if (suppliers.length > 0) setUserType("FORNECEDOR");
+        else if (hospitals.length > 0) setUserType("HOSPITAL");
 
-        if (professionals.length > 0) {
-          setUserType("PROFISSIONAL");
-          return;
-        }
-        if (owners.length > 0) {
-          setUserType("CLINICA");
-          return;
-        }
-        if (suppliers.length > 0) {
-          setUserType("FORNECEDOR");
-          return;
-        }
-        if (hospitals.length > 0) {
-          setUserType("HOSPITAL");
-          return;
-        }
+        setIsLoading(false);
       } catch (error) {
         clearTimeout(timeoutId);
+        setNeedsLogin(true);
+        setIsLoading(false);
       }
     };
     loadUser();
@@ -147,10 +132,52 @@ export default function Onboarding() {
 
   const currentStepData = steps[currentStep];
 
-  if (!user || !userType) {
+  // Loading state handling
+  const [isLoading, setIsLoading] = useState(true);
+  const [needsLogin, setNeedsLogin] = useState(false);
+
+  // URL de login do Base44
+  const BASE44_APP_URL = import.meta.env.VITE_BASE44_APP_BASE_URL || "https://6916d492cc9abf019259139b.base44.app";
+  const REDIRECT_URL = window.location.origin;
+  const LOGIN_URL = `${BASE44_APP_URL}/login?redirect=${encodeURIComponent(REDIRECT_URL)}`;
+
+  const handleLogin = () => {
+    window.location.href = LOGIN_URL;
+  };
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-[#0a0a1a] flex items-center justify-center">
         <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-brand-coral"></div>
+      </div>
+    );
+  }
+
+  // Tela de Login quando usuário não está autenticado
+  if (needsLogin) {
+    return (
+      <div className="min-h-screen bg-[#0a0a1a] text-white flex flex-col items-center justify-center p-6">
+        <div className="text-center max-w-md">
+          <div className="text-8xl mb-8">🏥</div>
+          <h1 className="text-4xl font-black mb-4 bg-gradient-to-r from-brand-coral to-brand-orange bg-clip-text text-transparent">
+            Doutorizze
+          </h1>
+          <p className="text-gray-400 text-lg mb-8">
+            A maior plataforma de vagas para profissionais de saúde
+          </p>
+          <button
+            onClick={handleLogin}
+            className="w-full px-8 py-4 bg-gradient-to-r from-brand-coral to-brand-orange text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all mb-4"
+          >
+            Entrar / Criar Conta
+          </button>
+          <button
+            onClick={() => navigate(createPageUrl("Feed"))}
+            className="w-full px-8 py-4 bg-white/5 border border-white/10 text-gray-300 font-bold rounded-2xl hover:bg-white/10 transition-all"
+          >
+            Explorar sem conta
+          </button>
+        </div>
       </div>
     );
   }
