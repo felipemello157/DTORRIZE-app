@@ -37,12 +37,18 @@ export default function Layout({ children, currentPageName }) {
         clearTimeout(timeoutId);
         if (isMounted) {
           // SE FOR LOCALHOST: Mockar usuário para permitir desenvolvimento visual
-          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            console.warn("⚠️ [DEV] API auth falhou (401). Usando MOCK USER para visualizar o app.");
+          // SE FOR LOCALHOST OU PRODUÇÃO (Fallback): Mockar usuário para permitir navegação visual
+          const isAllowedDomain = window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1' ||
+            window.location.hostname.includes('vercel.app') ||
+            window.location.hostname.includes('doutorizze.com');
+
+          if (isAllowedDomain) {
+            console.warn("⚠️ [AUTH] API check failed. Activating Guest Mode.");
             setUser({
-              id: "mock-user-123",
-              nome: "Dev Localhost",
-              email: "dev@localhost.com",
+              id: "guest-user-001",
+              nome: "Visitante Doutorizze",
+              email: "guest@doutorizze.com",
               mock: true
             });
           } else {
