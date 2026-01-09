@@ -16,9 +16,9 @@ const Footer = () => {
                 </div>
 
                 <div className="footer-links">
-                    <Link to="/privacidade" className="footer-link">Privacidade</Link>
-                    <Link to="/termos" className="footer-link">Termos</Link>
-                    <Link to="/ajuda" className="footer-link">Ajuda</Link>
+                    <Link to="/PoliticaPrivacidade" className="footer-link">Privacidade</Link>
+                    <Link to="/TermosUso" className="footer-link">Termos</Link>
+                    <Link to="/Ajuda" className="footer-link">Ajuda</Link>
                     <a href="mailto:contato@doutorizze.com" className="footer-link">Contato</a>
                 </div>
 

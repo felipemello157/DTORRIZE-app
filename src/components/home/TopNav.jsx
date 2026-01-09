@@ -36,7 +36,7 @@ const TopNav = () => {
                 <Link to="/login" className="text-white/70 hover:text-white font-medium text-sm transition-colors">
                     Entrar
                 </Link>
-                <Link to="/register-clinic" className="nav-cta">
+                <Link to="/CadastroClinica" className="nav-cta">
                     Cadastrar Clínica
                 </Link>
                 <button
