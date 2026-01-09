@@ -136,13 +136,9 @@ export default function Onboarding() {
   const [isLoading, setIsLoading] = useState(true);
   const [needsLogin, setNeedsLogin] = useState(false);
 
-  // URL de login do Base44
-  const BASE44_APP_URL = import.meta.env.VITE_BASE44_APP_BASE_URL || "https://6916d492cc9abf019259139b.base44.app";
-  const REDIRECT_URL = window.location.origin;
-  const LOGIN_URL = `${BASE44_APP_URL}/login?redirect=${encodeURIComponent(REDIRECT_URL)}`;
-
+  // Usar método do SDK Base44 para login
   const handleLogin = () => {
-    window.location.href = LOGIN_URL;
+    base44.auth.redirectToLogin(window.location.origin);
   };
 
   if (isLoading) {
