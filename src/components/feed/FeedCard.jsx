@@ -2,6 +2,8 @@ import React from "react";
 import { Heart, Play, ExternalLink } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 const tipoConfig = {
   NOTICIA_IA: { emoji: "📰", label: "Notícia", bg: "bg-blue-500/20", text: "text-blue-300" },
@@ -20,8 +22,9 @@ const tipoConfig = {
 export default function FeedCard({ post, onVideoClick, onCurtir }) {
   const config = tipoConfig[post.tipo_post] || tipoConfig.ADMIN;
   const temVideo = post.tipo_midia === "VIDEO" && post.video_url;
+  const navigate = useNavigate();
 
-  // Extrair ID do YouTube para thumbnail
+  // Função para extrair ID do YouTube
   const getYouTubeId = (url) => {
     if (!url) return null;
     const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?]+)/);
@@ -32,7 +35,6 @@ export default function FeedCard({ post, onVideoClick, onCurtir }) {
   const thumbnailUrl = post.imagem_url ||
     (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg` : null);
 
-  // Formatar duração do vídeo
   const formatDuracao = (segundos) => {
     if (!segundos) return "";
     const min = Math.floor(segundos / 60);
@@ -46,6 +48,19 @@ export default function FeedCard({ post, onVideoClick, onCurtir }) {
     } catch {
       return "Recente";
     }
+  };
+
+  const handleProfileClick = () => {
+    if (post.user_tipo === "CLINICA" || post.tipo_post === "VAGA" || post.tipo_post === "PARCEIRO") {
+      navigate(createPageUrl("PerfilClinicaPublico") + `?id=${post.user_id || 'mock'}`);
+    } else {
+      navigate(createPageUrl("VerProfissional") + `?id=${post.user_id || 'mock'}`);
+    }
+  };
+
+  const handleSourceClick = (e, url) => {
+    e.stopPropagation();
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -73,8 +88,6 @@ export default function FeedCard({ post, onVideoClick, onCurtir }) {
                   <Play className="w-8 h-8 text-white ml-1" fill="currentColor" />
                 </div>
               </div>
-
-              {/* Duração */}
               {post.video_duracao && (
                 <div className="absolute bottom-3 right-3 px-2 py-1 bg-black/80 text-white text-xs font-bold rounded">
                   {formatDuracao(post.video_duracao)}
@@ -90,7 +103,6 @@ export default function FeedCard({ post, onVideoClick, onCurtir }) {
               {post.fonte_tipo === "INSTAGRAM" && "📷"}
               {post.fonte_tipo === "TELEGRAM" && "📱"}
               {post.fonte_tipo === "SITE" && "🌐"}
-              {post.fonte_tipo === "REVISTA" && "📖"}
               {post.fonte_nome}
             </div>
           )}
@@ -99,7 +111,6 @@ export default function FeedCard({ post, onVideoClick, onCurtir }) {
 
       {/* Conteúdo */}
       <div className="p-5">
-        {/* Badge tipo + tempo */}
         <div className="flex items-center gap-3 mb-3 flex-wrap">
           <span className={`px-3 py-1 ${config.bg} ${config.text} text-xs font-bold rounded-full border border-white/5`}>
             {config.emoji} {config.label}
@@ -114,17 +125,17 @@ export default function FeedCard({ post, onVideoClick, onCurtir }) {
           </span>
         </div>
 
-        {/* Título */}
-        <h3 className="font-bold text-white text-lg mb-2 line-clamp-2 leading-tight">
+        <h3
+          onClick={handleProfileClick}
+          className="font-bold text-white text-lg mb-2 line-clamp-2 leading-tight cursor-pointer hover:text-brand-coral transition-colors"
+        >
           {post.titulo}
         </h3>
 
-        {/* Descrição */}
         <p className="text-gray-400 text-sm mb-5 line-clamp-3 leading-relaxed">
           {post.descricao}
         </p>
 
-        {/* Tags */}
         {post.tags && post.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4">
             {post.tags.slice(0, 3).map((tag, index) => (
@@ -135,7 +146,6 @@ export default function FeedCard({ post, onVideoClick, onCurtir }) {
           </div>
         )}
 
-        {/* Ações */}
         <div className="flex items-center justify-between pt-4 border-t border-white/5">
           <div className="flex items-center gap-6">
             <button
@@ -145,25 +155,20 @@ export default function FeedCard({ post, onVideoClick, onCurtir }) {
               <Heart className="w-5 h-5 group-hover:scale-110 transition-transform" />
               <span className="text-sm font-medium">{post.curtidas || 0}</span>
             </button>
-
             <button className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-              <span className="text-xs">
-                👁️
-              </span>
+              <span className="text-xs">👁️</span>
               <span className="text-sm font-medium">{post.visualizacoes || 0}</span>
             </button>
           </div>
 
           {post.fonte_url && (
-            <a
-              href={post.fonte_url}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={(e) => handleSourceClick(e, post.fonte_url)}
               className="flex items-center gap-1 px-4 py-2 bg-gradient-to-r from-brand-coral to-brand-orange text-white text-sm font-bold rounded-xl hover:shadow-lg hover:shadow-brand-coral/20 hover:scale-105 transition-all"
             >
               Ver mais
               <ExternalLink className="w-4 h-4" />
-            </a>
+            </button>
           )}
         </div>
       </div>
