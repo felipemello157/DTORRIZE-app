@@ -1,0 +1,362 @@
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
+import { createPageUrl } from "@/utils";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { motion } from "framer-motion";
+import {
+  ChevronLeft,
+  Send,
+  Clock,
+  AlertTriangle
+} from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+export default function ChatThread() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const messagesEndRef = useRef(null);
+  const [user, setUser] = useState(null);
+  const [newMessage, setNewMessage] = useState("");
+  const [tokenUsuario, setTokenUsuario] = useState(null);
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const threadId = urlParams.get("id");
+  const [isTabVisible, setIsTabVisible] = useState(!document.hidden);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+
+        // Buscar token do usuário
+        const tokens = await base44.entities.TokenUsuario.filter({ user_id: currentUser.id });
+        if (tokens.length > 0) {
+          setTokenUsuario(tokens[0]);
+        }
+      } catch (error) {
+        // Erro silencioso
+      }
+    };
+    loadUser();
+  }, []);
+
+  // Pausar polling quando tab inativa
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsTabVisible(!document.hidden);
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Buscar thread
+  const { data: thread, isLoading: loadingThread } = useQuery({
+    queryKey: ["chatThread", threadId],
+    queryFn: async () => {
+      const threads = await base44.entities.ChatThread.filter({ id: threadId });
+      if (threads.length === 0) throw new Error("Thread não encontrada");
+      return threads[0];
+    },
+    enabled: !!threadId,
+    staleTime: 2000,
+    refetchInterval: isTabVisible ? 5000 : false // Pausar quando inativo
+  });
+
+  // Buscar mensagens
+  const { data: messages = [], isLoading: loadingMessages } = useQuery({
+    queryKey: ["chatMessages", threadId],
+    queryFn: async () => {
+      const msgs = await base44.entities.ChatMessage.filter({ thread_id: threadId });
+      return msgs.sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+    },
+    enabled: !!threadId,
+    staleTime: 2000,
+    refetchInterval: isTabVisible ? 3000 : false // Pausar quando inativo
+  });
+
+  // Marcar como lidas
+  useEffect(() => {
+    if (thread && user && messages.length > 0) {
+      const isBuyer = user.id === thread.buyer_user_id;
+      const unreadMessages = messages.filter(msg =>
+        isBuyer ? !msg.read_by_buyer : !msg.read_by_seller
+      );
+
+      if (unreadMessages.length > 0) {
+        unreadMessages.forEach(msg => {
+          base44.entities.ChatMessage.update(msg.id, {
+            [isBuyer ? "read_by_buyer" : "read_by_seller"]: true
+          }).catch(() => { });
+        });
+
+        // Zerar contador de não lidas
+        base44.entities.ChatThread.update(thread.id, {
+          [isBuyer ? "unread_buyer" : "unread_seller"]: 0
+        }).catch(() => { });
+      }
+    }
+  }, [messages, thread, user]);
+
+  // Scroll automático
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Mutation para enviar mensagem
+  const sendMessageMutation = useMutation({
+    mutationFn: async (messageText) => {
+      const isBuyer = user.id === thread.buyer_user_id;
+
+      // Detectar padrões de risco
+      const flagsRisco = [];
+      const lowerText = messageText.toLowerCase();
+      if (/\d{10,11}|\(\d{2}\)\s?\d{4,5}-?\d{4}/.test(messageText)) {
+        flagsRisco.push("TELEFONE_DETECTADO");
+      }
+      if (/pix|transferência|transferencia|deposito|depósito/i.test(messageText)) {
+        flagsRisco.push("PIX_DETECTADO");
+      }
+      if (/fora do app|fora da plataforma/i.test(lowerText)) {
+        flagsRisco.push("NEGOCIACAO_EXTERNA");
+      }
+
+      const novaMensagem = await base44.entities.ChatMessage.create({
+        thread_id: threadId,
+        sender_user_id: user.id,
+        sender_name: user.full_name,
+        message_text: messageText,
+        read_by_buyer: isBuyer,
+        read_by_seller: !isBuyer,
+        flags_risco: flagsRisco
+      });
+
+      // Atualizar thread
+      await base44.entities.ChatThread.update(threadId, {
+        last_message_at: new Date().toISOString(),
+        last_message_preview: messageText.slice(0, 100),
+        [isBuyer ? "unread_seller" : "unread_buyer"]: (thread[isBuyer ? "unread_seller" : "unread_buyer"] || 0) + 1
+      });
+
+      // Enviar push notification ao destinatário
+      const recipientUserId = isBuyer ? thread.seller_user_id : thread.buyer_user_id;
+      try {
+        await fetch('http://164.152.59.49:5678/webhook/push-notification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: recipientUserId,
+            title: `💬 Nova mensagem de ${user.full_name}`,
+            body: messageText.slice(0, 100),
+            data: { type: 'NOVA_MENSAGEM', thread_id: threadId }
+          })
+        });
+      } catch (e) {
+        // Erro silencioso
+      }
+
+      return novaMensagem;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["chatMessages", threadId] });
+      queryClient.invalidateQueries({ queryKey: ["chatThread", threadId] });
+      setNewMessage("");
+    },
+    onError: (error) => {
+      toast.error("Erro ao enviar: " + error.message);
+    }
+  });
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+    if (newMessage.length > 1000) {
+      toast.error("Mensagem muito longa (máximo 1000 caracteres)");
+      return;
+    }
+    sendMessageMutation.mutate(newMessage.trim());
+  };
+
+  const compartilharTokenId = () => {
+    if (!tokenUsuario) {
+      toast.error("Você ainda não possui um Token Doutorizze");
+      return;
+    }
+
+    const mensagemToken = `🎫 MEU TOKEN DOUTORIZZE:\n\n${tokenUsuario.token_id}\n\nApresente este código para receber descontos exclusivos!`;
+    sendMessageMutation.mutate(mensagemToken);
+    toast.success("Token compartilhado!");
+  };
+
+  if (loadingThread || !user) {
+    return (
+      <div className="min-h-screen bg-[#0a0a1a] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-brand-primary"></div>
+      </div>
+    );
+  }
+
+  if (!thread) {
+    return (
+      <div className="min-h-screen bg-[#0a0a1a] flex items-center justify-center p-4">
+        <div className="text-center">
+          <p className="text-2xl font-bold text-white mb-4">Chat não encontrado</p>
+          <button
+            onClick={() => navigate(createPageUrl("Chats"))}
+            className="px-6 py-3 bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-bold rounded-xl"
+          >
+            Ver Meus Chats
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const isExpired = new Date(thread.expires_at) < new Date();
+  const isBuyer = user.id === thread.buyer_user_id;
+  const otherUserName = isBuyer ? thread.seller_name : thread.buyer_name;
+
+  const horasRestantes = Math.max(0, Math.floor((new Date(thread.expires_at) - new Date()) / (1000 * 60 * 60)));
+
+  return (
+    <div className="min-h-screen bg-[#0a0a1a] pb-32">
+      {/* Header */}
+      <div className="bg-[#13132B] border-b border-white/10 p-4 sticky top-0 z-40 shadow-xl">
+        <button
+          onClick={() => navigate(createPageUrl("Chats"))}
+          className="flex items-center gap-2 text-gray-400 hover:text-white mb-3"
+        >
+          <ChevronLeft className="w-5 h-5" />
+          Voltar
+        </button>
+
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-brand-primary to-brand-secondary flex items-center justify-center text-white font-bold text-lg">
+            {otherUserName?.[0]?.toUpperCase() || "?"}
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-white">{otherUserName}</p>
+            <p className="text-sm text-gray-400">{thread.item_title}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Banner de Expiração */}
+      <div className={`mx-4 mt-4 p-4 rounded-2xl border ${isExpired
+          ? "bg-red-500/10 border-red-500/30"
+          : horasRestantes < 12
+            ? "bg-yellow-500/10 border-yellow-500/30"
+            : "bg-blue-500/10 border-blue-500/30"
+        }`}>
+        <div className="flex items-start gap-2">
+          {isExpired ? (
+            <>
+              <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-red-400">
+                <p className="font-bold">⚠️ Chat Expirado</p>
+                <p>Este chat expirou e foi bloqueado. Não é mais possível enviar mensagens.</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <Clock className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-300">
+                <p className="font-bold">⏰ Chat expira em {horasRestantes}h</p>
+                <p>Após 48h da criação, este chat será apagado automaticamente. Troque contatos se necessário.</p>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Mensagens */}
+      <div className="px-4 py-6 space-y-4 mb-24">
+        {loadingMessages && (
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
+          </div>
+        )}
+
+        {messages.map((msg, idx) => {
+          const isMe = msg.sender_user_id === user.id;
+          const hasRiskFlags = msg.flags_risco && msg.flags_risco.length > 0;
+
+          return (
+            <motion.div
+              key={msg.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+            >
+              <div className={`max-w-[75%] ${isMe ? "items-end" : "items-start"} flex flex-col`}>
+                <div
+                  className={`px-4 py-3 rounded-2xl ${isMe
+                      ? "bg-gradient-to-r from-brand-primary to-brand-secondary text-white"
+                      : "bg-[#13132B] border border-white/10 text-gray-200"
+                    } shadow-md`}
+                >
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                    {msg.message_text}
+                  </p>
+
+                  {hasRiskFlags && (
+                    <div className="mt-2 pt-2 border-t border-white/20">
+                      <p className="text-xs opacity-80 flex items-center gap-1 text-yellow-300">
+                        <AlertTriangle className="w-3 h-3" />
+                        Cuidado: troque contatos com segurança
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1 px-2">
+                  {formatDistanceToNow(new Date(msg.created_date), { addSuffix: true, locale: ptBR })}
+                </p>
+              </div>
+            </motion.div>
+          );
+        })}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input Fixo */}
+      <div className="fixed bottom-0 left-0 right-0 bg-[#13132B] border-t border-white/10 p-4 shadow-2xl z-50">
+        {/* Botão Compartilhar Token */}
+        {tokenUsuario && !isExpired && (
+          <div className="max-w-6xl mx-auto mb-3">
+            <button
+              type="button"
+              onClick={compartilharTokenId}
+              disabled={sendMessageMutation.isPending}
+              className="w-full py-2 bg-brand-primary/10 border border-brand-primary/30 text-brand-primary font-bold rounded-xl hover:bg-brand-primary/20 transition-all disabled:opacity-50 text-sm"
+            >
+              🎫 Compartilhar meu Token Doutorizze
+            </button>
+          </div>
+        )}
+
+        <form onSubmit={handleSendMessage} className="max-w-6xl mx-auto flex gap-3">
+          <input
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder={isExpired ? "Chat expirado" : "Digite sua mensagem..."}
+            disabled={isExpired || sendMessageMutation.isPending}
+            maxLength={1000}
+            className="flex-1 px-4 py-3 bg-[#0a0a1a] border border-white/10 rounded-2xl text-white placeholder-gray-600 focus:border-brand-primary outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+          <button
+            type="submit"
+            disabled={isExpired || !newMessage.trim() || sendMessageMutation.isPending}
+            className="px-6 py-3 bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            <Send className="w-5 h-5" />
+            Enviar
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
