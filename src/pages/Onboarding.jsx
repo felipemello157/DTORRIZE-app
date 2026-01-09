@@ -35,15 +35,35 @@ export default function Onboarding() {
 
         setUser(currentUser);
 
-        if (currentUser?.onboarding_completo) {
-          redirectToDashboard();
-          return;
-        }
+        // Detectar tipo de usuário
+        try {
+          const [professionals, owners, suppliers, hospitals] = await Promise.all([
+            base44.entities.Professional.filter({ user_id: currentUser.id }),
+            base44.entities.CompanyOwner.filter({ user_id: currentUser.id }),
+            base44.entities.Supplier.filter({ user_id: currentUser.id }),
+            base44.entities.Hospital.filter({ user_id: currentUser.id })
+          ]);
 
-        if (professionals.length > 0) setUserType("PROFISSIONAL");
-        else if (owners.length > 0) setUserType("CLINICA");
-        else if (suppliers.length > 0) setUserType("FORNECEDOR");
-        else if (hospitals.length > 0) setUserType("HOSPITAL");
+          let detectedType = null;
+          if (professionals.length > 0) detectedType = "PROFISSIONAL";
+          else if (owners.length > 0) detectedType = "CLINICA";
+          else if (suppliers.length > 0) detectedType = "FORNECEDOR";
+          else if (hospitals.length > 0) detectedType = "HOSPITAL";
+
+          setUserType(detectedType);
+
+          if (currentUser?.onboarding_completo && detectedType) {
+            // Redirecionar para dashboard apropriado
+            if (detectedType === "PROFISSIONAL") navigate(createPageUrl("NewJobs"));
+            else if (detectedType === "CLINICA") navigate(createPageUrl("DashboardClinica"));
+            else if (detectedType === "FORNECEDOR") navigate(createPageUrl("DashboardFornecedor"));
+            else if (detectedType === "HOSPITAL") navigate(createPageUrl("DashboardHospital"));
+            else navigate(createPageUrl("Feed"));
+            return;
+          }
+        } catch (entityError) {
+          console.log("Erro ao detectar tipo de usuário:", entityError);
+        }
 
         setIsLoading(false);
       } catch (error) {
