@@ -156,9 +156,9 @@ export default function Onboarding() {
   const [isLoading, setIsLoading] = useState(true);
   const [needsLogin, setNeedsLogin] = useState(false);
 
-  // Redirecionar para a página de login do app Base44
+  // Redirecionar para o app Base44 (login é gerenciado lá)
   const handleLogin = () => {
-    window.location.href = "https://vibe-health-copy-50220607.base44.app/login";
+    window.location.href = "https://vibe-health-copy-50220607.base44.app/";
   };
 
   if (isLoading) {
