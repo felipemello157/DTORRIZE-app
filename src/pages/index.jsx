@@ -202,6 +202,18 @@ import ServicosPrestados from "./ServicosPrestados";
 
 import VerificarToken from "./VerificarToken";
 
+// Novas páginas importadas do projeto antigo
+import ClubePontos from "./ClubePontos";
+import ComparadorPrecos from "./ComparadorPrecos";
+import IndicarAmigo from "./IndicarAmigo";
+import ContratoDigital from "./ContratoDigital";
+import IAsDisponiveis from "./IAsDisponiveis";
+import EscolherTipoCadastro from "./EscolherTipoCadastro";
+import MentoriaExpress from "./MentoriaExpress";
+import Perfil from "./Perfil";
+import TestProfessional from "./TestProfessional";
+import FeedBackup from "./FeedBackup";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -407,6 +419,18 @@ const PAGES = {
     ServicosPrestados: ServicosPrestados,
 
     VerificarToken: VerificarToken,
+
+    // Novas páginas do projeto antigo
+    ClubePontos: ClubePontos,
+    ComparadorPrecos: ComparadorPrecos,
+    IndicarAmigo: IndicarAmigo,
+    ContratoDigital: ContratoDigital,
+    IAsDisponiveis: IAsDisponiveis,
+    EscolherTipoCadastro: EscolherTipoCadastro,
+    MentoriaExpress: MentoriaExpress,
+    Perfil: Perfil,
+    TestProfessional: TestProfessional,
+    FeedBackup: FeedBackup,
 
 }
 
@@ -637,6 +661,18 @@ function PagesContent() {
                 <Route path="/ServicosPrestados" element={<ServicosPrestados />} />
 
                 <Route path="/VerificarToken" element={<VerificarToken />} />
+
+                {/* Novas rotas do projeto antigo */}
+                <Route path="/ClubePontos" element={<ClubePontos />} />
+                <Route path="/ComparadorPrecos" element={<ComparadorPrecos />} />
+                <Route path="/IndicarAmigo" element={<IndicarAmigo />} />
+                <Route path="/ContratoDigital" element={<ContratoDigital />} />
+                <Route path="/IAsDisponiveis" element={<IAsDisponiveis />} />
+                <Route path="/EscolherTipoCadastro" element={<EscolherTipoCadastro />} />
+                <Route path="/MentoriaExpress" element={<MentoriaExpress />} />
+                <Route path="/Perfil" element={<Perfil />} />
+                <Route path="/TestProfessional" element={<TestProfessional />} />
+                <Route path="/FeedBackup" element={<FeedBackup />} />
 
             </Routes>
         </Layout>

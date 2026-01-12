@@ -276,7 +276,41 @@ const entities = {
   Task: createEntityAPI('Task'),
 
   // ==================== USER (Built-in) ====================
-  User: createEntityAPI('User')
+  User: createEntityAPI('User'),
+
+  // ==================== ENTIDADES ADICIONAIS (17 entidades do arquivo antigo) ====================
+  // Clínicas e Estabelecimentos
+  Clinic: createEntityAPI('Clinic'),                           // Clínicas odontológicas
+  Institution: createEntityAPI('Institution'),                 // Instituições de ensino/saúde
+  Laboratory: createEntityAPI('Laboratory'),                   // Laboratórios (inglês)
+
+  // Vagas e Candidaturas
+  JobApplication: createEntityAPI('JobApplication'),           // Candidaturas a vagas
+  Substitution: createEntityAPI('Substitution'),               // Substituições (inglês)
+  SubstitutionApplication: createEntityAPI('SubstitutionApplication'), // Candidaturas a substituições
+
+  // Cursos e Educação
+  CourseEnrollment: createEntityAPI('CourseEnrollment'),       // Matrículas em cursos
+
+  // Chat e Mensagens
+  Chat: createEntityAPI('Chat'),                               // Conversas/Chats
+  Message: createEntityAPI('Message'),                         // Mensagens individuais
+
+  // Avaliações e Favoritos
+  Review: createEntityAPI('Review'),                           // Avaliações/Reviews
+  Favorite: createEntityAPI('Favorite'),                       // Favoritos (inglês)
+
+  // Tokens e Cupons
+  Token: createEntityAPI('Token'),                             // Tokens genéricos
+  Coupon: createEntityAPI('Coupon'),                           // Cupons de desconto
+
+  // Eventos e Serviços
+  Event: createEntityAPI('Event'),                             // Eventos
+  Service: createEntityAPI('Service'),                         // Serviços oferecidos
+
+  // Telegram e Clientes
+  TelegramUser: createEntityAPI('TelegramUser'),               // Usuários do Telegram
+  ClienteDoutorizze: createEntityAPI('ClienteDoutorizze')      // Clientes Doutorizze
 };
 
 // ==================== INTEGRATIONS ====================
