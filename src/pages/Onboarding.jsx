@@ -158,9 +158,9 @@ export default function Onboarding() {
 
   // Usar método do SDK Base44 para login
   const handleLogin = () => {
-    // Redireciona para a página de login do Base44 com callback para o site atual
-    const callbackUrl = window.location.origin + "/login";
-    base44.auth.redirectToLogin(callbackUrl);
+    // Redireciona para a página de login do Base44
+    // Após login, volta para /login que detecta o token e redireciona pro dashboard
+    base44.auth.login("/login");
   };
 
   if (isLoading) {
