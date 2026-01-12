@@ -6,8 +6,8 @@ import { createClient } from '@base44/sdk';
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
 export const base44 = createClient({
-  appId: import.meta.env.VITE_BASE44_APP_ID || "6916d492cc9abf019259139b",
-  apiKey: import.meta.env.VITE_BASE44_API_KEY || "99de92f827954ea8b42ec87e7c406b28",
-  baseUrl: import.meta.env.VITE_BASE44_APP_BASE_URL,
+  appId: import.meta.env.VITE_BASE44_APP_ID || "6963e16b0d60b23050220607",
+  apiKey: import.meta.env.VITE_BASE44_API_KEY,
+  baseUrl: import.meta.env.VITE_BASE44_APP_BASE_URL || "https://vibe-health-copy-50220607.base44.app",
   requiresAuth: false // Vercel frontend + Base44 backend
 });
