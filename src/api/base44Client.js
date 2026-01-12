@@ -200,36 +200,83 @@ const auth = {
 // ==================== ENTITIES OBJECT (compatível com base44.entities) ====================
 
 const entities = {
+  // ==================== AUTENTICAÇÃO (2 entidades) ====================
+  WhatsAppOTP: createEntityAPI('WhatsAppOTP'),
+  EmailVerification: createEntityAPI('EmailVerification'),
+
+  // ==================== USUÁRIOS (9 entidades) ====================
   Professional: createEntityAPI('Professional'),
+  Company: createEntityAPI('Company'),
   CompanyOwner: createEntityAPI('CompanyOwner'),
-  Supplier: createEntityAPI('Supplier'),
+  CompanyUnit: createEntityAPI('CompanyUnit'),
   Hospital: createEntityAPI('Hospital'),
-  Clinic: createEntityAPI('Clinic'),
+  Supplier: createEntityAPI('Supplier'),
+  EducationInstitution: createEntityAPI('EducationInstitution'),
+  Laboratorio: createEntityAPI('Laboratorio'),
+  ProfessionalAd: createEntityAPI('ProfessionalAd'),
+
+  // ==================== VAGAS (3 entidades) ====================
   Job: createEntityAPI('Job'),
-  JobApplication: createEntityAPI('JobApplication'),
-  Substitution: createEntityAPI('Substitution'),
-  SubstitutionApplication: createEntityAPI('SubstitutionApplication'),
-  Course: createEntityAPI('Course'),
-  CourseEnrollment: createEntityAPI('CourseEnrollment'),
+  JobMatch: createEntityAPI('JobMatch'),
+  JobContract: createEntityAPI('JobContract'),
+
+  // ==================== SUBSTITUIÇÕES (5 entidades) ====================
+  SubstituicaoUrgente: createEntityAPI('SubstituicaoUrgente'),
+  CandidaturaSubstituicao: createEntityAPI('CandidaturaSubstituicao'),
+  ValidacaoComparecimento: createEntityAPI('ValidacaoComparecimento'),
+  SuspensaoProfissional: createEntityAPI('SuspensaoProfissional'),
+  BloqueioAgenda: createEntityAPI('BloqueioAgenda'),
+
+  // ==================== CHAT (2 entidades) ====================
+  ChatThread: createEntityAPI('ChatThread'),
+  ChatMessage: createEntityAPI('ChatMessage'),
+
+  // ==================== MARKETPLACE (3 entidades) ====================
   MarketplaceItem: createEntityAPI('MarketplaceItem'),
-  Chat: createEntityAPI('Chat'),
-  Message: createEntityAPI('Message'),
-  Notification: createEntityAPI('Notification'),
-  Review: createEntityAPI('Review'),
-  Favorite: createEntityAPI('Favorite'),
-  Token: createEntityAPI('Token'),
-  Coupon: createEntityAPI('Coupon'),
-  Report: createEntityAPI('Report'),
+  MarketplaceChat: createEntityAPI('MarketplaceChat'),
+  ProductRadar: createEntityAPI('ProductRadar'),
+
+  // ==================== CONTEÚDO (1 entidade) ====================
   FeedPost: createEntityAPI('FeedPost'),
-  User: createEntityAPI('User'),
-  Institution: createEntityAPI('Institution'),
-  Laboratory: createEntityAPI('Laboratory'),
-  Event: createEntityAPI('Event'),
+
+  // ==================== CURSOS (1 entidade) ====================
+  Course: createEntityAPI('Course'),
+
+  // ==================== PROMOÇÕES (1 entidade) ====================
   Promotion: createEntityAPI('Promotion'),
-  Service: createEntityAPI('Service'),
-  TelegramUser: createEntityAPI('TelegramUser'),
+
+  // ==================== AVALIAÇÕES (1 entidade) ====================
+  Rating: createEntityAPI('Rating'),
+
+  // ==================== TOKENS (2 entidades) ====================
+  TokenUsuario: createEntityAPI('TokenUsuario'),
+  TokenDesconto: createEntityAPI('TokenDesconto'),
+
+  // ==================== NOTIFICAÇÕES (3 entidades) ====================
+  Notification: createEntityAPI('Notification'),
+  NotificationPreference: createEntityAPI('NotificationPreference'),
+  WhatsAppNotification: createEntityAPI('WhatsAppNotification'),
+
+  // ==================== RELACIONAMENTOS (1 entidade) ====================
+  VinculoProfissionalClinica: createEntityAPI('VinculoProfissionalClinica'),
+
+  // ==================== PREFERÊNCIAS (1 entidade) ====================
+  MatchPreferences: createEntityAPI('MatchPreferences'),
+
+  // ==================== CRÉDITO (1 entidade) ====================
+  PreSimulacao: createEntityAPI('PreSimulacao'),
+
+  // ==================== SISTEMA (4 entidades) ====================
+  Report: createEntityAPI('Report'),
+  Favorito: createEntityAPI('Favorito'),
+  TelegramAccess: createEntityAPI('TelegramAccess'),
   AuditLog: createEntityAPI('AuditLog'),
-  ClienteDoutorizze: createEntityAPI('ClienteDoutorizze')
+
+  // ==================== EXTRA (1 entidade) ====================
+  Task: createEntityAPI('Task'),
+
+  // ==================== USER (Built-in) ====================
+  User: createEntityAPI('User')
 };
 
 // ==================== INTEGRATIONS ====================
